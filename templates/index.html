@@ -1,0 +1,27 @@
+﻿<html>
+  <head>
+    <title>Система контроля безопасности Noruas</title>
+    <style>
+      body {
+        background: gray;
+      }
+      section {
+        background: darkblue;
+        color: white;
+        border-radius: 1em;
+        padding: 1em;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        margin-right: -50%;
+        transform: translate(-50%, -50%)
+      }
+    </style>
+  </head>
+  <body>
+    <section>
+      <h1>Система контроля безопасности Noruas</h1>
+      <img src="{{ url_for('video_feed') }}">
+    </section>
+  </body>
+</html>
