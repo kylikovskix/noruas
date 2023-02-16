@@ -4,11 +4,12 @@ from threading import Thread
 import cv2
 import os
 from flask import Flask, render_template, Response
+import config
 from face_recognition_thread import FaceRecognitionThread
 from face_recognition_thread import face_recognition_train
 from hal import *
 from paho.mqtt import client as mqtt_client
-from config import *
+
 
 app = Flask(__name__)
 
@@ -16,12 +17,12 @@ def frame_pub(mqtt_client, face_recognition_tread):
     while True:
         jpeg = get_jpeg(face_recognition_tread)
         if jpeg is not None:
-            mqtt_client.publish(topic_frame_pub, jpeg.tobytes())
+            mqtt_client.publish(config.topic_frame_pub, jpeg.tobytes())
         time.sleep(1)
 
 
 def unlock_sub(client, userdata, msg):
-    if msg.payload.decode() == "PRESS" and msg.topic == topic_unlock_sub:
+    if msg.payload.decode() == "PRESS" and msg.topic == config.topic_unlock_sub:
         door_unlock()
 
 
@@ -32,15 +33,15 @@ def mqtt_stream_start(face_recognition_tread):
             thread = Thread(target=frame_pub, args=(client, face_recognition_tread))
             thread.start()
 
-            client.subscribe(topic_unlock_sub)
+            client.subscribe(config.topic_unlock_sub)
             client.on_message = unlock_sub
         else:
             print("Failed to connect, return code %d\n", rc)
 
-    client = mqtt_client.Client(client_id)
-    client.username_pw_set(username, password)
+    client = mqtt_client.Client(config.client_id)
+    client.username_pw_set(config.username, config.password)
     client.on_connect = on_connect
-    client.connect_async(broker, port)
+    client.connect_async(config.broker, config.port)
     client.loop_start()
     print("mqtt client started")
 
@@ -54,9 +55,10 @@ def get_jpeg(face_recognition_tread):
             cv2.rectangle(img, (left, top), (right, bottom), (0, 255, 0), 2)
             cv2.putText(img, name, (left + 6, top - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
 
-            for k in landmark:
-                for p in landmark[k]:
-                    cv2.circle(img, (p[0], p[1]), 1, (0, 0, 255), -1)
+            if config.show_landmarks:
+                for k in landmark:
+                    for p in landmark[k]:
+                        cv2.circle(img, (p[0], p[1]), 1, (0, 0, 255), -1)
 
         encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 75]
         ret, jpeg = cv2.imencode('.jpg', img, encode_param)
@@ -96,7 +98,7 @@ def my_press_btn_callback(chanel):
     # получаем список распознанных лиц
     names = face_recognition_thread.get_result()['names']
     # определяем наличие распознанх персон в списке запрещенных
-    for name in black_list:
+    for name in config.black_list:
         if name in names:
             # в случае их наличия, гасим желтый индикатор и зажигаем красный на 1 секунду
             yellow_indicator_off()
@@ -107,7 +109,7 @@ def my_press_btn_callback(chanel):
             return
 
     # определяем наличие распознанх персон в списке разрешенных
-    for name in access_list:
+    for name in config.access_list:
         # если есть, гасим жёлтый светодиод, зажигаем зеленый и включаем реле на 5 сек для открытия двери
         if name in names:
             yellow_indicator_off()

@@ -68,6 +68,7 @@ class FaceRecognitionThread(threading.Thread):
             # найдем контуры лиц
             faces = face_recognition.face_locations(rgb_small_frame)
             # получим координаты опорных точек и вычислим эмбединги
+
             landmarks = face_recognition.face_landmarks(rgb_small_frame, faces, model=config.model)
             encodings = face_recognition.face_encodings(rgb_small_frame, faces, model=config.model)
 
@@ -101,7 +102,7 @@ class FaceRecognitionThread(threading.Thread):
             self.landmarks = []
 
             # добавим новую информаци, пересчитав координаты относительно исходного кадра
-            inv_scale = 1/config.scale
+            inv_scale = int(1/config.scale)
             for (top, right, bottom, left), name, landmark in zip(faces, names, landmarks):
                 top *= inv_scale
                 right *= inv_scale
